@@ -104,7 +104,7 @@ class BleScanService: Service(), BleScanCallBack {
         const val EXTRA_CONNECT_ERROR = "extra_connect_error"
         const val EXTRA_BLE_DEVICE = "extra_ble_device"
         const val EXTRA_WITH_TIMER = "extra_with_timer"
-        const val SCAN_DURATION_MS = 60_000L
+//        const val SCAN_DURATION_MS = 60_000L
 
         private const val CHANNEL_ID = "ble_scan_channel"
         private const val NOTIFICATION_ID = 1
