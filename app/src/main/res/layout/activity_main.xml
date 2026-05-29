@@ -5,12 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!--
-        NavHostFragment manages the Fragment back stack automatically.
-        app:navGraph points to our nav_graph.xml which sets ScanFragment
-        as the start destination.
-        app:defaultNavHost="true" means the back button works correctly.
-    -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"

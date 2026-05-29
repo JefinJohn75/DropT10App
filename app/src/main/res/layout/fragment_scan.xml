@@ -7,7 +7,6 @@
     android:padding="16dp"
     android:background="#F5F5F5">
 
-    <!-- Title -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,7 +16,6 @@
         android:textColor="#3D3D4E"
         android:paddingBottom="12dp" />
 
-    <!-- Scan / Stop button — label changes dynamically from ScanFragment -->
     <Button
         android:id="@+id/btnScan"
         android:layout_width="match_parent"
@@ -26,7 +24,6 @@
         android:backgroundTint="#3D3D4E"
         android:textColor="#FFFFFF" />
 
-    <!-- Status text — updates live as devices are found -->
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="match_parent"

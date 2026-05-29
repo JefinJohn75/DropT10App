@@ -30,15 +30,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.blescanner.R
-import com.example.blescanner.ble.BleScanCallBack
 import com.example.blescanner.ble.BleScanService
 import com.example.blescanner.ble.BleScannerScanResult
 import com.example.blescanner.ble.Utils
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
-
-import java.io.FileOutputStream                      // needed for FileOutputStream
 
 class ScanFragment : Fragment() {
 
@@ -49,8 +44,6 @@ class ScanFragment : Fragment() {
     private lateinit var btnScan         : Button
     private lateinit var tvStatus        : TextView
     private var pendingOtaMac = ""
-    private var pendingOtaUuid = ""
-
     private val OTA_FILE_REQUEST_CODE = 35
 
 
@@ -74,7 +67,6 @@ class ScanFragment : Fragment() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
 
-                // BleScanService found a device → unpack and push to ViewModel
                 BleScanService.ACTION_SCAN_RESULT -> {
                     val device: BleScannerScanResult? =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -87,45 +79,12 @@ class ScanFragment : Fragment() {
                             intent.getParcelableExtra(BleScanService.EXTRA_BLE_DEVICE)
                         }
                     device?.let {
-                        viewModel.addOrUpdateDevice(it)     // Add/update in list
+                        viewModel.addOrUpdateDevice(it)
                         Log.i(tag, "Device received: ${it.device.address}")
                     }
                 }
 
 
-
-//                BleScanService.ACTION_LOCATE_STARTED -> {
-//                    Log.i(tag, "Locate started----------------------------------")
-//                }
-//
-//                BleScanService.ACTION_LOCATE_STOPPED,
-//                BleScanService.ACTION_LOCATE_ERROR -> {
-//                    Log.i(tag, "Locate stopped/error-------------------------------------------")
-//                    deviceAdapter.resetLocatingState()
-//                }
-//
-//
-//                BleScanService.ACTION_PAIRING_STARTED -> {
-//                    val mac = intent.getStringExtra(BleScanService.EXTRA_PAIR_MAC) ?: ""
-//                    Log.i(tag,"Pairing started: $mac")
-//                    Toast.makeText(requireContext(), "Pairing  $mac....", Toast.LENGTH_SHORT).show()
-//                }
-//
-//                BleScanService.ACTION_PAIRING_SUCCESS -> {
-//                    val mac = intent.getStringExtra(BleScanService.EXTRA_PAIR_MAC) ?: ""
-//                    val meshId = intent.getIntExtra(BleScanService.EXTRA_PAIR_MESH_ID, 0)
-//                    Log.i(tag,"Pairing success: mac= $mac meshId = $meshId")
-//                    Toast.makeText(requireContext(), "Paired: $mac meshId = $meshId", Toast.LENGTH_SHORT).show()
-//                    deviceAdapter.resetPairingState(mac)
-//                }
-//
-//                BleScanService.ACTION_PAIRING_FAILED -> {
-//                    val mac = intent.getStringExtra(BleScanService.EXTRA_PAIR_MAC) ?: ""
-//                    val error = intent.getStringExtra(BleScanService.EXTRA_PAIR_ERROR) ?: ""
-//                    Log.i(tag,"Pairing failed: mac= $mac error = $error")
-//                    Toast.makeText(requireContext(), "Pairing failed: $mac error = $error", Toast.LENGTH_SHORT).show()
-//                    deviceAdapter.resetPairingState(mac)
-//                }
 
 
                 BleScanService.ACTION_CONNECT_SUCCESS -> {
@@ -140,17 +99,9 @@ class ScanFragment : Fragment() {
                             "Connected: $mac\nFW: $dropT1Version",
                             Toast.LENGTH_SHORT).show()
                         deviceAdapter.setConnectedState(mac,true)
-                        viewModel.updateDeviceVersion(mac,"","",dropT1Version)
+                        viewModel.updateDeviceVersion(mac,dropT1Version)
                     } else {
 
-//                    val hw = intent.getStringExtra(BleScanService.EXTRA_HW_VERSION) ?: ""                                 //----FOR WISILICA------to down
-//                    val sw = intent.getStringExtra(BleScanService.EXTRA_SW_VERSION) ?: ""
-//                    val fw = intent.getStringExtra(BleScanService.EXTRA_FW_VERSION) ?: ""
-//
-//                    Log.i(tag,"Connected: mac= $mac HW=$hw SW=$sw FW=$fw")
-//                    Toast.makeText(requireContext(), "Connected: $mac\nHW=$hw\nSW=$sw\nFW=$fw", Toast.LENGTH_SHORT).show()
-//                    deviceAdapter.setConnectedState(mac,true)
-//                    viewModel.updateDeviceVersion(mac,hw,sw,fw)
                         deviceAdapter.setConnectedState(mac,true)
                     }
 
@@ -171,14 +122,6 @@ class ScanFragment : Fragment() {
                     Toast.makeText(requireContext(), "Disconnected: $mac", Toast.LENGTH_SHORT).show()
                     deviceAdapter.setConnectedState(mac,false)
                 }
-
-//                BleScanService.ACTION_OTA_CLICKED -> {
-//                    val mac = intent.getStringExtra(BleScanService.EXTRA_MAC_ADDRESS) ?: ""
-//                    Log.i(tag, "OTA clicked: $mac")
-//                    Toast.makeText(context, "OTA coming soon for $mac", Toast.LENGTH_SHORT).show()
-//                    // OTA logic will be added here later
-//
-//                }
 
                 BleScanService.ACTION_OTA_PROGRESS -> {
                     val progress = intent.getFloatExtra(
@@ -211,8 +154,6 @@ class ScanFragment : Fragment() {
         }
     }
 
-    // ── Fragment lifecycle ────────────────────────────────────────────────────
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -229,23 +170,11 @@ class ScanFragment : Fragment() {
             .getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = manager.adapter
 
-        // Setup RecyclerView with our ListAdapter
         deviceAdapter = BleDeviceAdapter(
-//            onStartLocate = { macAddress ->    viewModel.startLocate(macAddress) },
-//            onStopLocate = { macAddress ->     viewModel.stopLocate(macAddress)  },
-//            onStartPair = { macAddress ->     viewModel.startPairing(macAddress) },
             onConnect        = { macAddress ->        viewModel.startConnect(macAddress) },
             onDisconnect     = { macAddress ->    viewModel.stopConnect(macAddress) },
-//            onOTA            = { macAddress ->    pendingOtaMac = macAddress
-//                                                                    otaFilePicker.launch(                           //----PHONE FILE MANAGER OPENS------------------
-//                                                                        "application/octet-stream"
-//                                                                    )}
             onOTA            = { macAddress ->    pendingOtaMac = macAddress
-                                                  val device = viewModel.devices.value
-                                                      .firstOrNull() {it.device.address == macAddress}
-                                                      pendingOtaUuid = device?.deviceUuid ?:""
-
-                                                            openStorageAccess()                                      //----PHONE FILE MANAGER OPENS------------------
+                                                        openStorageAccess()
                                                         }
         )
         view.findViewById<RecyclerView>(R.id.recyclerView).apply {
@@ -257,9 +186,9 @@ class ScanFragment : Fragment() {
 
         btnScan.setOnClickListener {
             if (viewModel.isScanning.value) {
-                viewModel.stopScan()                // Scanning → stop it
+                viewModel.stopScan()
             } else {
-                checkBluetoothAndScan()             // Not scanning → begin flow
+                checkBluetoothAndScan()
             }
         }
 
@@ -288,20 +217,19 @@ class ScanFragment : Fragment() {
                 "Please enable Bluetooth first.",
                 Toast.LENGTH_SHORT
             ).show()
-            return                                  // Stop here — do not proceed
+            return
         }
-        checkPermissionsAndScan()                   // BT is ON → check permissions
+        checkPermissionsAndScan()
     }
 
-    // ── Step 2b: Check / request runtime permissions ──────────────────────────
     private fun checkPermissionsAndScan() {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(                                // Android 12+
+            arrayOf(
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_CONNECT
             )
         } else {
-            arrayOf(                                // Android 11 and below
+            arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         }
@@ -312,26 +240,18 @@ class ScanFragment : Fragment() {
         }
 
         if (allGranted) {
-            viewModel.startScan()                   // ── STEP 3: Start the scan
+            viewModel.startScan()
         } else {
-            permissionLauncher.launch(permissions)  // Ask user for permissions
+            permissionLauncher.launch(permissions)
         }
     }
 
-    // Register BroadcastReceiver to listen for service broadcasts
     private fun registerScanReceiver() {
         val filter = IntentFilter().apply {
-            addAction(BleScanService.ACTION_SCAN_RESULT)    // Device found broadcast
-//            addAction(BleScanService.ACTION_LOCATE_STARTED)
-//            addAction(BleScanService.ACTION_LOCATE_STOPPED)
-//            addAction(BleScanService.ACTION_LOCATE_ERROR)
-//            addAction(BleScanService.ACTION_PAIRING_STARTED)
-//            addAction(BleScanService.ACTION_PAIRING_SUCCESS)
-//            addAction(BleScanService.ACTION_PAIRING_FAILED)
+            addAction(BleScanService.ACTION_SCAN_RESULT)
             addAction(BleScanService.ACTION_CONNECT_SUCCESS)
             addAction(BleScanService.ACTION_CONNECT_FAILED)
             addAction(BleScanService.ACTION_CONNECT_STOPPED)
-//            addAction(BleScanService.ACTION_OTA_CLICKED)
             addAction(BleScanService.ACTION_OTA_PROGRESS)
             addAction(BleScanService.ACTION_OTA_COMPLETE)
             addAction(BleScanService.ACTION_OTA_FAILED)
@@ -351,26 +271,22 @@ class ScanFragment : Fragment() {
 
 
 
-    // ── Step 4: Observe ViewModel StateFlows ─────────────────────────────────
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                // Device list → submit to adapter (DiffUtil handles animation)
                 launch {
                     viewModel.devices.collect { list ->
                         deviceAdapter.submitList(list.toList())
                     }
                 }
 
-                // Scanning state → toggle button label
                 launch {
                     viewModel.isScanning.collect { scanning ->
                         btnScan.text = if (scanning) "Stop Scan" else "Scan BLE Devices"
                     }
                 }
 
-                // Status text → live feedback to the user
                 launch {
                     viewModel.devices.collect { list ->
                         tvStatus.text = when {
@@ -393,44 +309,38 @@ class ScanFragment : Fragment() {
         }
     }
 
-    // Retry/Cancel dialog shown when 60s scan finds nothing
-
-
-
-
-
 
     private fun openStorageAccess() {
 
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        intent.type = "*/*"                                                    //---for any files like .bin, .zip or any
-        intent.addCategory(Intent.CATEGORY_OPENABLE)                //---only shows files that can opened and readable) means not system file or other
-        startActivityForResult(intent, OTA_FILE_REQUEST_CODE)    //---launch file manager to select file (35 as racking number s=same as lumos)
+        intent.type = "*/*"
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        startActivityForResult(intent, OTA_FILE_REQUEST_CODE)
 
     }
 
 
     @Deprecated("Deprecated in Java")
-    override fun onActivityResult(                              //---called after user picks file from manager----
-        requestCode: Int,                                       //---35
+    override fun onActivityResult(
+        requestCode: Int,
         resultCode: Int,
-        data: Intent?                                           //---contains the picked file URI(address)-----
+        data: Intent?
     ) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (resultCode == Activity.RESULT_OK) {                 // user picked a file successfully
-            if (requestCode == OTA_FILE_REQUEST_CODE) {         // confirm it came from our OTA picker
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == OTA_FILE_REQUEST_CODE) {
 
-                val uriFile = data?.data                        //---get the URI of the picked file-----
-                    ?: return                                   // if null → user cancelled → stop
+                val uriFile = data?.data
+                    ?: return
 
-                val filePath = copyFileToInternalStorage(       //---copy file to our app storage
+                val filePath = copyFileToInternalStorage(
                     uriFile,
-                    "ota_file_"                            // folder name prefix
-                ) ?: return                                     // if copy failed → stop
+                    "ota_file_"
+                ) ?: return
 
-                Log.i(tag, "OTA file path: $filePath")     // log the path for debugging
-                viewModel.startOta(pendingOtaMac, filePath,pendingOtaUuid)      // start OTA with MAC + file path
+                Log.i(tag, "OTA file path: $filePath")
+                viewModel.startOta(pendingOtaMac, filePath)
             }
         }
     }
@@ -438,86 +348,62 @@ class ScanFragment : Fragment() {
 
 
     private fun copyFileToInternalStorage(
-        uri: Uri,                                        //---URI(address) of picked file
-        newDirName: String                               //--- name of folder we create to store our copy
+        uri: Uri,
+        newDirName: String
     ): String? {
 
-        val returnCursor = requireContext()              // query file info from ContentResolver
+        val returnCursor = requireContext()
             .contentResolver
             .query(
                 uri,
-                arrayOf(                                 // we want these two columns
-                    OpenableColumns.DISPLAY_NAME,        // original file name e.g. firmware.bin
-                    OpenableColumns.SIZE                 // file size in bytes
+                arrayOf(
+                    OpenableColumns.DISPLAY_NAME,
+                    OpenableColumns.SIZE
                 ),
                 null, null, null
             )
 
-        val nameIndex = returnCursor                     // get column index for DISPLAY_NAME
+        val nameIndex = returnCursor
             ?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-        returnCursor?.moveToFirst()                      // move cursor to first (only) row
-        val name = nameIndex                             // read the file name
+        returnCursor?.moveToFirst()
+        val name = nameIndex
             ?.let { returnCursor?.getString(it) }
-        returnCursor?.close()                            // close cursor — good practice
+        returnCursor?.close()
 
-        val dir = java.io.File(                          // create folder in app files directory
+        val dir = java.io.File(
             requireContext().filesDir.toString() +
                     "/" + newDirName
         )
-        if (!dir.exists()) dir.mkdir()                   // create folder if it doesn't exist
+        if (!dir.exists()) dir.mkdir()
 
-        val output = java.io.File(                       // final file path for our copy
+        val output = java.io.File(
             requireContext().filesDir.toString() +
-                    "/" + newDirName + "/" + name                // e.g. /files/ota_file_/firmware.bin
+                    "/" + newDirName + "/" + name
         )
 
         try {
-            val inputStream = requireContext()           // open stream to read picked file
+            val inputStream = requireContext()
                 .contentResolver
                 .openInputStream(uri)
 
-            val outputStream = java.io.FileOutputStream(output) // open stream to write our copy
+            val outputStream = java.io.FileOutputStream(output)
 
             var read: Int
-            val buffers = ByteArray(1024)                // read 1024 bytes at a time
-            while (inputStream?.read(buffers)            // keep reading until no more bytes
+            val buffers = ByteArray(1024)
+            while (inputStream?.read(buffers)
                     .also { if (it != null) read = it } != -1) {
-                outputStream.write(buffers, 0,           // write what we read into our copy
+                outputStream.write(buffers, 0,
                     buffers.size)
             }
-            inputStream?.close()                         // close input stream
-            outputStream.close()                         // close output stream
+            inputStream?.close()
+            outputStream.close()
 
         } catch (e: Exception) {
             Log.e(tag, "copyFileToInternalStorage: ${e.message}")
-            return null                                  // if anything went wrong → return null
+            return null
         }
 
-        return output.path                               // return path to our copy
-    }                                                    // e.g. /data/.../files/ota_file_/firmware.bin
+        return output.path
+    }
 
-    //    private val otaFilePicker = registerForActivityResult(
-//        ActivityResultContracts.GetContent()
-//    ) { uri ->
-//
-//        uri ?: return@registerForActivityResult
-//
-//        val input = requireContext()
-//            .contentResolver
-//            .openInputStream(uri)
-//            ?: return@registerForActivityResult
-//
-//        val temp = java.io.File(                                    // create a File object in our app's private cache folder
-//            requireContext().cacheDir,
-//            "ota_temp.bin"                                   // we always name it ota_temp.bin
-//        )                                                          // this is OUR COPY of the firmware file
-//
-//
-//        temp.outputStream().use {
-//            input.copyTo(it)
-//        }
-//        Log.i(tag, "OTA file: ${temp.absolutePath}" + "(${temp.length()} bytes")
-//
-//        viewModel.startOta(pendingOtaMac,temp.absolutePath)
-//    }
 }

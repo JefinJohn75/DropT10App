@@ -11,11 +11,7 @@ data class BleScannerScanResult(
     val result  : ScanResult,
     val scanData: ByteArray,
     val device  : BluetoothDevice,
-    var hwVersion: String = "",
-    var swVersion: String = "",
     var fwVersion: String = "",
-//    var isTesting : Boolean = false,
-//    var isPairing : Boolean = false
     var isConnected : Boolean = false,
     var deviceUuid : String = ""
 
@@ -28,8 +24,6 @@ data class BleScannerScanResult(
         other as BleScannerScanResult
         return device.address == other.device.address  &&
                 isConnected == other.isConnected &&
-                hwVersion == other.hwVersion &&
-                swVersion == other.swVersion &&
                 fwVersion == other.fwVersion
 
 

@@ -1,6 +1,5 @@
 package com.example.blescanner.ble
 
-import android.Manifest
 import android.content.Context
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -16,7 +15,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
-import androidx.annotation.RequiresPermission
 import java.util.UUID
 
 class BleScanningUtility(var context: Context) {
@@ -25,8 +23,6 @@ class BleScanningUtility(var context: Context) {
     public var bluetoothAdapter: BluetoothAdapter = bluetoothManager.adapter
     private var bluetoothLeScanner: BluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
     private var scanning = false
-//    private val thermometerServiceUuid =
-//        ParcelUuid.fromString("00001809-0000-1000-8000-00805F9B34FB")
     private val enableBt: Int = 10001
     private lateinit var bleScanCallback: BleScanCallBack
     private val tag = this.javaClass.simpleName
@@ -35,41 +31,6 @@ class BleScanningUtility(var context: Context) {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
 
-
-//            if(result.device.name.equals("Stick Sense", ignoreCase = true) || result.device.name.equals("StickSense", ignoreCase = true)) {
-//                Log.i(
-//                    tag,
-//                    "onScanResult>>>>>>>>>>>>>>>>>>>> " + " name: " + result.device.name + " address: " + result.device.address
-//                )
-//                Log.i(tag, "SCAN DATA>>>>>> " + Utils.printByteData(result.scanRecord?.bytes))
-//                val scanResult = StickSenseScanResult(
-//                    result,
-//                    result.scanRecord?.bytes ?: ByteArray(0),
-//                    result.device
-//                )
-//                bleScanCallback.onScanResult(scanResult)
-//            }
-
-
-            //-----FOR WISILICA DEVICE FILTER------------------FOR WISILICA DEVICE FILTER-----FOR WISILICA DEVICE FILTER--------------------------
-//            val scanRecord = result.scanRecord?.bytes
-//
-//            if (!isWisilicaDevice(scanRecord)) return
-//
-//            val uuid = BleUtilis.getUUID(scanRecord ?: ByteArray(0))
-//
-//
-//            val bleDevice = BleScannerScanResult(
-//                result = result,
-//                scanData = result.scanRecord?.bytes ?: ByteArray(0),
-//                device = result.device,
-//                deviceUuid = uuid
-//            )
-//            Log.i(tag, "Found: ${result.device.name} | ${result.device.address}")
-//            bleScanCallback.onScanResult(bleDevice)
-
-
-            //---------DROP T1 DEVICE---------------DROP T1 DEVICE---------DROP T1 DEVICE--------------------------------
 
             if (!isDropT1Device(result)) return
 
@@ -106,27 +67,16 @@ class BleScanningUtility(var context: Context) {
 
     @SuppressLint("MissingPermission")
     fun startBleScan(bleScanCallback: BleScanCallBack) {
-        if (scanning)                                       // Stop existing scan before starting new one
+        if (scanning)
             stopBleScan()
-        this.bleScanCallback = bleScanCallback              // Save who receives our results
+        this.bleScanCallback = bleScanCallback
         enableBluetooth()
         scanning = true
 
 
-        val scanFilter = ScanFilter.Builder()                                                   //-------FILTER FOR BLE DEVICES
+        val scanFilter = ScanFilter.Builder()
             .build()
 
-//        val DROP_T1_SERVICE_UUID = ParcelUuid(
-//            UUID.fromString("0000DDDD-0000-1000-8000-00805F9B34FB")
-//        )
-//
-//        val scanFilter = ScanFilter.Builder()
-//            .setServiceUuid(DROP_T1_SERVICE_UUID)
-//            .build()
-
-//        val settingsBuilder = ScanSettings.Builder()
-//            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-//            .build()
 
         val settingsBuilder = ScanSettings.Builder()
         settingsBuilder.setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
@@ -139,7 +89,7 @@ class BleScanningUtility(var context: Context) {
         }
 
         try {
-            bluetoothLeScanner.flushPendingScanResults(scanCallBack)                // Clear leftover results from any previous scan session
+            bluetoothLeScanner.flushPendingScanResults(scanCallBack)
 
 
             bluetoothLeScanner.startScan(listOf(scanFilter), settingsBuilder.build(), scanCallBack)
@@ -178,27 +128,14 @@ class BleScanningUtility(var context: Context) {
         }
     }
 
-//
-//    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-//    private fun isDropT1Device(result: ScanResult): Boolean {
-//        // Check by service UUID
-//        val serviceUuids = result.scanRecord?.serviceUuids
-//        if (!serviceUuids.isNullOrEmpty()) {
-//            val target = ParcelUuid(UUID.fromString("0000DDDD-0000-1000-8000-00805F9B34FB"))
-//            if (serviceUuids.contains(target)) return true
-//        }
-//        // Fallback: check device name
-//        return result.device.name?.startsWith("DropT1", ignoreCase = true) == true
-//    }
-
 
     @SuppressLint("MissingPermission")
     private fun isDropT1Device(result: android.bluetooth.le.ScanResult): Boolean {
 
-        val nameMatch = result.device.name?.startsWith("DropT1", ignoreCase = true) == true                 //-----CHECK / FILTER 1---------------
+        val nameMatch = result.device.name?.startsWith("DropT1", ignoreCase = true) == true
 
         val dropT1ServiceUuid = ParcelUuid(UUID.fromString("0000DDDD-0000-1000-8000-00805F9B34FB"))
-        val uuidMatch = result.scanRecord?.serviceUuids?.contains(dropT1ServiceUuid) == true                        //-----CHECK / FILTER 2---------------
+        val uuidMatch = result.scanRecord?.serviceUuids?.contains(dropT1ServiceUuid) == true
 
         val matched = nameMatch || uuidMatch
         if (matched) {
@@ -209,36 +146,10 @@ class BleScanningUtility(var context: Context) {
     }
 
 
-
-
-    private fun isWisilicaDevice(scanRecord: ByteArray?): Boolean {
-        if (scanRecord == null || scanRecord.size < 8) return false
-
-        val manufacturerId = ((scanRecord[6].toInt() and 0xFF) shl 8) or
-                (scanRecord[5].toInt() and 0xFF)
-
-        val packetFormat = scanRecord[7].toInt() and 0xFF
-
-        return (manufacturerId == 0x0197 || manufacturerId == 0x9701) &&
-                (packetFormat == 0x00 || packetFormat == 0x01)
-    }
-
-
-
-
-
-
-
-
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
     @SuppressLint("MissingPermission")
     private fun enableBluetooth() {
         try {
             if (!bluetoothAdapter.isEnabled) {
-                // bluetoothAdapter.enable();
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 (context as Activity).startActivityForResult(
                     enableBtIntent,
