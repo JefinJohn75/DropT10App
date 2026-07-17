@@ -97,14 +97,11 @@ class BleScanService: Service(), BleScanCallBack {
     private var dropT1LastCmd: Int = 0
     private val DROP_T1_REQUEST_MTU = 244
 
+    private lateinit var connectGattCallBack: BluetoothGattCallback
 
 
-    override fun onCreate() {
-        super.onCreate()
-        scanningUtility = BleScanningUtility(this)
-        createNotificationChannel()
-        Log.d(TAG, "Service created")
-    }
+
+
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -259,7 +256,14 @@ class BleScanService: Service(), BleScanCallBack {
 
 
     @SuppressLint("MissingPermission")
-    private val connectGattCallBack: BluetoothGattCallback = object : BluetoothGattCallback() {
+    override fun onCreate() {
+        super.onCreate()
+        scanningUtility = BleScanningUtility(this)
+        createNotificationChannel()
+        connectGattCallBack = object : BluetoothGattCallback() {
+
+
+//    private val connectGattCallBack: BluetoothGattCallback = object : BluetoothGattCallback() {
 
         override fun onConnectionStateChange(
             gatt: BluetoothGatt,
@@ -516,6 +520,8 @@ class BleScanService: Service(), BleScanCallBack {
             }
         }
 
+    }
+        Log.d(TAG, "Service created")
     }
 
 
